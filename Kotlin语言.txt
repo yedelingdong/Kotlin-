@@ -1,0 +1,281 @@
+1.语法：
+Kotlin中最基础的语法和特点，包括：
+❑ 程序中最基本的操作，如声明变量、定义函数以及字符串操作；
+❑ 高阶函数的概念，以及函数作为参数和返回值的作用；
+❑ Lambda表达式语法，以及用它来简化程序表达；
+❑ 表达式在Kotlin中的特殊设计，以及if、when、try等表达式的用法。
+
+声明一个变量。
+JAVA:
+String str = "Hello world!";
+
+Kotlin:
+val str: String = "Hello world!"
+
+
+2.1.1 增强的类型推导
+编译器可以在不显式声明类型的情况下，自动推导出它所需要的类型。
+val str = "Hello world."
+val i = 10
+
+2.1.2 声明函数返回值类型
+fun sum(x: Int, y: Int): Int { return x+y }
+
+2.1.2 声明函数返回值类型
+fun sum(x: Int, y: Int) = x+y
+
+Kotlin支持这种用单行表达式与等号的语法来定义函数，叫作表达式函数体，作为区分，普通的函数声明则可叫作代码块函数体。
+
+
+fun foo(n: Int) = if (n == 0) 1 else n * foo(n - 1) 这样写无法推导出返回值类型
+显式声明类型，正确的写法：
+fun foo(n: Int): Int = if (n == 0) 1 else n * foo(n - 1)
+你可能觉察到了if在这里不同寻常的用法——没有return关键字。在Kotlin中，if是一个表达式，它的返回值类型是各个逻辑分支的相同类型或公共父类型。
+
+var可以声明变量
+val解释成varible+final,通过val声明的变量具有Java中的final关键字的效果，也就是引用不可变。
+
+Kotlin数组存储在堆内存中
+
+class Book(var name: String) {
+  fun printName() {
+    println(this.name)
+  }
+}
+fun main(args: Array<String>) {
+  val book = Book("Thinking in Java")
+  book.name = "Diving into Kotlin"
+  book.printName()
+}
+
+尽可能采用val、不可变对象及纯函数来设计程序。
+
+关于纯函数的概念，其实就是没有副作用的函数，具备引用透明性
+
+var声明变量
+fun cal(list: List<Int>): Int {
+  var res = 0
+  for (el in list) {
+    res *= el
+    res += el
+  }
+  return res
+}
+
+val声明变量
+fun cal(list: List<Int>): Int {
+  fun recurse(listr: List<Int>, res: Int): Int {
+    if (listr.size > 0) {
+      val el = listr.first()
+      return recurse(listr.drop(1), res * el + el)
+    } else {
+      return res
+    }
+  }
+  return recurse(list, 0)
+}
+
+或
+fun cal(list: List<Int>): Int {
+  return list.fold(0) { res, el -> res *el + el }
+}
+
+2.3 高阶函数和Lambda
+fun foo(x: Int) {
+  fun double(y: Int): Int {
+    return y * 2
+  }
+  println(double(10))
+}
+
+以其他函数作为参数或返回值的函数
+
+2.3.3 函数的类型
+从中我们发现，Kotlin中的函数类型声明需遵循以下几点：
+❑ 通过->符号来组织参数类型和返回值类型，左边是参数类型，右边是返回值类型；
+❑ 必须用一个括号来包裹参数类型；
+❑ 返回值类型即使是Unit，也必须显式声明。
+
+如果是一个没有参数的函数类型，参数类型部分就用()来表示。
+() -> Unit
+
+如果是多个参数的情况，那么我们就需要用逗号来进行分隔，如：
+(Int, String) -> Unit
+
+此外，Kotlin还支持为声明参数指定名字，如下所示：
+(i: Int, str: String) -> Unit
+
+如果该函数类型的变量也是可选的话，我们还可以把整个函数类型变成可选：
+((i: Int, str: String) -> Unit)?
+
+高阶函数还支持返回另一个函数，所以还可以这么做：
+(i: Int) -> ((j: Int) -> Unit)
+表示传入一个类型为Int的参数，然后返回另一个类型为(Int) -> Unit的函数。简化它的表达，我们可以把后半部分的括号给省略：
+(Int) -> Int -> Unit
+
+以下的函数类型则不同，它表示的是传入一个函数类型的参数，再返回一个Unit。
+((Int) -> Int) -> Unit
+
+
+在学习了Kotlin函数类型知识之后，Shaw便重新定义了filterCountries方法的参数声明。
+fun filterCountries(countries: List<Country>,
+  test: (Country) -> Boolean): List<Country> {
+  val res = mutableListOf<Country>();
+  for (c in countries) {
+    if (test(c)) {
+      res.add(c)
+    }
+  }  
+  return res;
+}
+
+2.3.4 方法和成员引用
+Kotlin存在一种特殊的语法，通过两个冒号来实现对于某个类的方法进行引用。以上面的代码为例，
+假如我们有一个CountryTest类的对象实例countryTest，如果要引用它的isBigEuropeanCountry方法，就可以这么写：
+countryTest::isBigEuropeanCountry
+我们还可以直接通过这种语法，来定义一个类的构造方法引用变量。
+class Book(val name: String)
+fun main(args: Array<String>) {
+  val getBook = ::Book
+  println(getBook("Hello world"))
+}
+可以发现，getBook的类型为(name: String) -> Book。类似的道理，如果我们要引用某个类中的成员变量，如Book类中的name，就可以这样引用：
+Book::name
+以上创建的Book::name的类型为(Book) -> String。当我们在对Book类对象的集合应用一些函数式API的时候，这会显得格外有用，比如：
+fun main(args: Array<String>) {
+  val bookNames = listOf(
+    Book("Thinking in java"),
+    Book("Dive into Kotlin")
+  ).map(Book::name)
+  println(bookNames)
+}
+
+于是，Shaw便使用了方法引用来传递参数，以下的调用果真奏效了。
+val countryApp = CountryApp()
+val countryTest = CountryTest()
+val countries = ...
+countryApp.filterCountries(countries, countryTest::isBigEuropeanCountry)
+
+2.3.5 匿名函数
+Kotlin支持在缺省函数名的情况下，直接定义一个函数。所以isBigEuropeanCountry方法我们可以直接定义为：
+fun(country: Country): Boolean {//没有函数名字
+  return country.continient == "EU" && country.population > 10000
+}
+
+Shaw直接调用filterCountries
+countryApp.filterCountries(countries, fun(country: Country): Boolean {
+  return country.continient == "EU" && country.population > 10000
+})
+Shaw开始意识到Kotlin这门语言的魅力，很快他发现还有一种语法可以让代码更简单，这就是Lambda表达式。
+
+2.3.6 Lambda是语法糖
+Lambda演算和图灵机一样，是一种支持理论上完备的形式系统，也是理解函数式编程的理论基础。
+古老的Lisp语言就是基于Lambda演算系统而来的，在Lisp中，匿名函数是重要的组成部分，它也被叫作Lambda表达式，这就是Lambda表达式名字的由来。
+所以，相较Lambda演算而言，Lambda表达式是更加简单的概念。你可以把它理解成简化表达后的匿名函数，实质上它就是一种语法糖。
+
+分析下代码filterCountries方法的匿名函数，会发现：
+❑ fun(country:Country)显得比较啰唆，因为编译器会推导类型，所以只需要一个代表变量的country就行了；
+❑ return关键字也可以省略，这里返回的是一个有值的表达式；
+❑ 模仿函数类型的语法，我们可以用->把参数和返回值连接在一起。
+简化后的表达就变成了这个样子：
+countryApp.filterCountries(countries {
+  country ->
+  country.continient == "EU" && country.population > 10000
+})
+
+这个就是Lambda表达式，它与匿名函数一样，是一种函数字面量。
+
+现在用Lambda的形式来定义一个加法操作：
+val sum: (Int, Int) -> Int = { x: Int, y: Int -> x + y }
+由于支持类型推导，我们可以采用两种方式进行简化：
+val sum = {x: Int, y: Int -> x + y }
+或
+val sum: (Int, Int) -> Int = { x, y -> x + y }
+总结下Lambda的语法：
+❑ 一个Lambda表达式必须通过{}来包裹；
+❑ 如果Lambda声明了参数部分的类型，且返回值类型支持类型推导，那么Lambda变量就可以省略函数类型声明；
+❑ 如果Lambda变量声明了函数类型，那么Lambda的参数部分的类型就可以省略。
+
+此外，如果Lambda表达式返回的不是Unit，那么默认最后一行表达式的值类型就是返回值类型，如：
+val foo = { x: Int ->
+  val y = x + 1
+  y //返回值是y
+}
+
+如果用fun关键字来声明Lambda表达式又会怎么样？
+fun foo(int: Int) {
+  print(int)
+}
+listOf(1,2,3).forEach { foo(it) }
+1．单个参数的隐式名称(it)
+其实它也是Kotlin简化Lambda表达的一种语法糖，叫作单个参数的隐式名称，代表了这个Lambda所接收的单个参数。这里的调用等价于：
+listOf(1,2,3).forEach { item -> foo(item) }
+默认情况下，我们可以直接用it来代表item，而不需要用item->进行声明。
+这行代码的结果可能出乎了你的意料，执行后你会发现什么也没有。为什么会这样？
+以下是把foo函数用IDE转化后的Java代码：
+@JvmStatic
+@NotNull
+public static final Function0 foo(final int var0) {
+  return (Function0)(new Function() {
+    public Object invoke() {
+      this.invoke();
+      return Unit.INSTANCE;
+    }
+    
+    public final void invoke() {
+      var1 = var0;
+      System.out.print(var1);
+    }
+  });
+}
+以上是字节码反编译的Java代码，从中我们可以发现Kotlin实现Lambda表达式的机理。
+
+2. Function类型
+Kotlin在JVM层设计了Function类型（Function0、Function1……Function22）来兼容Java的Lambda表达式，
+其中的后缀数字代表了Lambda参数的数量，如以上的foo函数构建的其实是一个无参Lambda，所以对应的接口是Function0，
+如果有一个参数那么对应的就是Function1。它在源码中是如下定义的：
+package kotlin.jvm.functions
+interface Function1<in P1, out R> : kotlin.Function<R> {
+  fun invoke(p1: P1) : R
+}
+
+神奇的数字—22
+也许你会问一个问题：为什么这里Function类型最大的是Function22？如果Lambda的参数超过了22个，那该怎么办呢？
+虽然22个参数已经够多了，然而现实中也许我们真的需要超过22个参数。其实，在Scala的设计中也遵循了22个数字的设计，
+这似乎已经成了业界的一种惯例。然而，这个22的设计也给Scala开发者带来了不少麻烦。所以，Kotlin在设计的时候便考虑到了这种情况，
+除了23个常用的Function类型外，还有一个FunctionN。在参数真的超过22个的时候，我们就可以依靠它来解决问题。
+
+3. invoke方法
+上面foo函数的返回类型是Function0。这也意味着，如果我们调用了foo(n)，那么实质上仅仅是构造了一个Function0对象。
+这个对象并不等价于我们要调用的过程本身。通过源码可以发现，需要调用Function0的invoke方法才能执行println方法。
+listOf(1,2,3).forEach { foo(it).invoke() }
+可以简化成:
+listOf(1,2,3).forEach { foo(it)() }
+
+2.3.7 函数、Lambda和闭包
+在你不熟悉Kotlin语法的情况下，很容易对fun声明函数、Lambda表达式的语法产生混淆，因为它们都可以存在花括号。
+现在我们已经了解了它们具体的语法，可通过以下的总结来更好地区分：
+❑ fun在没有等号、只有花括号的情况下，是我们最常见的代码块函数体，如果返回非Unit值，必须带return。
+fun foo(x: Int) { print(x) }
+fun foo(x: Int, y: Int): Int { return x * y }
+
+❑ fun带有等号，是单表达式函数体。该情况下可以省略return。
+fun foo(x: Int, y: Int) = { x * y}
+
+不管是用val还是fun，如果是等号加花括号的语法，那么构建的就是一个Lambda表达式，Lambda的参数在花括号内部声明。
+所以，如果左侧是fun，那么就是Lambda表达式函数体，也必须通过()或invoke来调用Lambda，如：
+val foo = { x: Int, y: Int -> x * y } //foo.invoke(1,2)或foo(1,2)
+fun foo(x: Int) = { y: Int -> x * y } //foo(1).invoke(2)或foo(1)(2)
+
+在Kotlin中，你会发现匿名函数体、Lambda（以及局部函数、object表达式）在语法上都存在“{}”，
+由这对花括号包裹的代码块如果访问了外部环境变量则被称为一个闭包。一个闭包可以被当作参数传递或者直接使用，
+它可以简单地看成“访问外部环境变量的函数”。Lambda是Kotlin中最常见的闭包形式。
+
+与Java不一样的地方在于，Kotlin中的闭包不仅可以访问外部变量，还能够对其进行修改，就像这样子：
+var sum = 0
+listOf(1,2,3).filter { it > 0 }.forEach { sum += it }
+
+
+
+《Kotlin核心编程》笔记
+
